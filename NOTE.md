@@ -1,5 +1,7 @@
 # Spot the Fake Photo — Note
 
+**Live demo:** [LIVE_URL] — upload a photo or use your phone camera.
+
 ## Approach
 
 The brief says *"small, fast, cheap, honest."* That ruled out a CNN for me: on 100 training images, a deep model would overfit, the inference cost climbs, and the rubric specifically rewards interpretability. The physics of the problem also points the other way — screen recaptures leave low-level frequency artefacts (LCD pixel grid moiré, reshoot blur, sensor noise differences) that hand-crafted features capture directly without 224×224 downsampling killing them.
@@ -55,7 +57,7 @@ Measured on MacBook M2 Pro CPU, single-threaded, no GPU. FFT on the full-resolut
 
 ## Cost per image at scale
 
-- **On-device:** free. Pure NumPy + Pillow, no model framework, `model.pkl` is < 100 KB.
+- **On-device:** free. Pure NumPy + Pillow, no model framework, `model.pkl` is 6 KB.
 - **Cloud:** ~10 images/sec on a t4g.small (~$0.017/hr, 2 vCPU). **~$0.0005 per 1000 images, ~$0.50 per million.** Assumes no batching and a single core.
 
 ## Trade-off
@@ -73,6 +75,6 @@ This lands on the small/fast/cheap end of the design space and trades absolute a
 
 **Keeping it accurate as cheaters adapt.** Log scores and metadata (device, time, score distribution) in production. Retrain monthly on disputed/wrong cases. Watch for score distribution drift toward 0.5 — that usually means a new screen class is slipping through. Maintain an adversarial reshoot set that grows with reported fraud cases.
 
-**On-device deployment.** Already small: `model.pkl` < 100 KB, dependencies are NumPy + Pillow only. For Android/iOS, the FFT and Gaussian blur both have native equivalents in OpenCV mobile bindings or Accelerate.framework — features.py could be ported in ~200 lines.
+**On-device deployment.** Already small: `model.pkl` is 6 KB, dependencies are NumPy + Pillow only. For Android/iOS, the FFT and Gaussian blur both have native equivalents in OpenCV mobile bindings or Accelerate.framework — features.py could be ported in ~200 lines.
 
 **Choosing the cut-off score.** Don't ship a single 0.5 threshold. Plot precision-recall on a held-out set and offer a two-threshold policy: **auto-block above 0.85** (high precision, low false-block rate for honest users), **auto-pass below 0.3**, **manual review between 0.3 and 0.85**. The exact cutoffs follow from Salescode's business cost ratio: how many false blocks per missed cheater is acceptable.
