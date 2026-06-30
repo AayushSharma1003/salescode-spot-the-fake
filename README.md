@@ -4,7 +4,7 @@ Given one image, decide if it's a **real photo** or a **photo of a screen** (som
 
 Salescode.ai take-home submission.
 
-**Live demo:** [LIVE_URL] — works on desktop (drop an image) and mobile (live camera capture).
+**Live demo:** https://salescode-spot-the-fake.onrender.com — works on desktop (drop an image) and mobile (live camera capture).
 *Note: hosted on Render's free tier, which spins down after 15 min of inactivity. First request after idle takes ~30–60s; subsequent calls are ~100 ms.*
 
 ## Results

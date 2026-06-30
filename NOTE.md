@@ -1,6 +1,6 @@
 # Spot the Fake Photo — Note
 
-**Live demo:** [LIVE_URL] — upload a photo or use your phone camera.
+**Live demo:** https://salescode-spot-the-fake.onrender.com — upload a photo or use your phone camera.
 
 ## Approach
 
