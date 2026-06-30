@@ -1,0 +1,16 @@
+# core feature extraction (used by features.py / predict.py — keep this list minimal,
+# predict.py needs to stay fast and small)
+numpy>=1.24
+Pillow>=10.0
+
+# dataset notebook + analysis only (not needed by predict.py at inference time)
+pandas>=2.0
+jupyter>=1.0
+notebook>=7.0
+
+# classifier stage (next step — LR / small tree models, calibration)
+scikit-learn>=1.3
+
+# optional: only needed if your phone saves HEIC instead of JPG
+# pillow-heif>=0.13
+matplotlib>=3.7
