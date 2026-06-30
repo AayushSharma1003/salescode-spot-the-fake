@@ -1,0 +1,15 @@
+name: Keep Render demo warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the demo
+        run: |
+          curl -sSf -o /dev/null -w "Status: %{http_code} | Time: %{time_total}s\n" \
+            https://salescode-spot-the-fake.onrender.com/
