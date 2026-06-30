@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spot the Fake Photo</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --card: #14171f;
+    --border: #232733;
+    --text: #e6e8ee;
+    --muted: #8b91a1;
+    --accent: #6ea8ff;
+    --real: #3ddc97;
+    --screen: #ff5d7a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 24px 16px 48px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  h1 {
+    font-size: 1.5rem; font-weight: 600; margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .sub { color: var(--muted); font-size: 0.95rem; margin: 0 0 24px; position: relative; z-index: 2; }
+  .sub a { color: var(--accent); text-decoration: none; }
+
+  .drop {
+    border: 1.5px dashed var(--border);
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    background: var(--card);
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .drop.hover { border-color: var(--accent); background: #181c26; }
+  .drop p { margin: 8px 0; }
+  .drop .big { font-size: 1.05rem; }
+  .drop .small { color: var(--muted); font-size: 0.85rem; }
+  .drop input { display: none; }
+
+  .row { display: flex; gap: 10px; margin-top: 12px; }
+  .btn {
+    flex: 1;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); color: #0b0d12; border-color: var(--accent); font-weight: 600; }
+
+  .preview { margin-top: 20px; display: none; }
+  .preview img { width: 100%; border-radius: 12px; display: block; }
+
+  .result { margin-top: 20px; display: none; }
+  .verdict {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .verdict .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+  .verdict .value { font-size: 1.8rem; font-weight: 600; margin: 0; }
+  .verdict.real .value { color: var(--real); }
+  .verdict.screen .value { color: var(--screen); }
+  .verdict .score { font-size: 0.9rem; color: var(--muted); margin-top: 6px; }
+
+  .bar {
+    margin-top: 14px;
+    height: 8px; border-radius: 4px;
+    background: linear-gradient(to right, var(--real), #d6d77a 50%, var(--screen));
+    position: relative;
+  }
+  .bar .mark {
+    position: absolute; top: -4px;
+    width: 4px; height: 16px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: left 0.4s cubic-bezier(.3,1.3,.5,1);
+  }
+  .meta { margin-top: 12px; font-size: 0.82rem; color: var(--muted); display: flex; justify-content: space-between; }
+
+  .loading { display: none; margin-top: 20px; text-align: center; color: var(--muted); font-size: 0.95rem; }
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: -3px; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error {
+    display: none;
+    background: #2a1518; border: 1px solid #4a2228;
+    color: #ff9eb0; padding: 12px; border-radius: 10px;
+    margin-top: 16px; font-size: 0.9rem;
+  }
+
+  footer { color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 32px; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Spot the Fake Photo</h1>
+  <p class="sub">Upload a photo. The model returns the probability it's a re-photographed screen. <a href="https://github.com/AayushSharma1003/salescode-spot-the-fake" target="_blank" rel="noopener">View code</a>.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="image/*">
+    <p class="big">Drop an image or tap to choose</p>
+    <p class="small">JPEG / PNG / HEIC · max 15 MB</p>
+  </label>
+
+  <div class="row">
+    <label class="btn" for="camera">📷 Take photo with camera</label>
+    <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
+  </div>
+
+  <div class="preview" id="preview">
+    <img id="previewImg" alt="">
+  </div>
+
+  <div class="loading" id="loading"><span class="spinner"></span>Analyzing…</div>
+
+  <div class="error" id="error"></div>
+
+  <div class="result" id="result">
+    <div class="verdict" id="verdict">
+      <div class="label">Verdict</div>
+      <p class="value" id="verdictText">—</p>
+      <div class="score" id="scoreText">—</div>
+      <div class="bar"><div class="mark" id="mark" style="left: 50%"></div></div>
+      <div class="meta">
+        <span>real</span>
+        <span id="latency">—</span>
+        <span>screen</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Salescode.ai take-home · classic CV + calibrated SVM-RBF
+  </footer>
+</div>
+
+<script>
+  const drop = document.getElementById("drop");
+  const fileInput = document.getElementById("file");
+  const cameraInput = document.getElementById("camera");
+  const preview = document.getElementById("preview");
+  const previewImg = document.getElementById("previewImg");
+  const loading = document.getElementById("loading");
+  const result = document.getElementById("result");
+  const verdict = document.getElementById("verdict");
+  const verdictText = document.getElementById("verdictText");
+  const scoreText = document.getElementById("scoreText");
+  const latencyEl = document.getElementById("latency");
+  const mark = document.getElementById("mark");
+  const errorEl = document.getElementById("error");
+
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.style.display = "block";
+    loading.style.display = "none";
+  }
+
+  function reset() {
+    errorEl.style.display = "none";
+    result.style.display = "none";
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    reset();
+
+    // Preview
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    preview.style.display = "block";
+
+    loading.style.display = "block";
+
+    const form = new FormData();
+    form.append("image", file);
+
+    try {
+      const r = await fetch("/predict", { method: "POST", body: form });
+      const data = await r.json();
+      loading.style.display = "none";
+
+      if (!r.ok) {
+        showError(data.error || "Prediction failed");
+        return;
+      }
+
+      const s = data.score;
+      const isScreen = s >= 0.5;
+      verdict.className = "verdict " + (isScreen ? "screen" : "real");
+      verdictText.textContent = isScreen ? "Photo of a screen" : "Real photo";
+      scoreText.textContent =
+        "Confidence: " + (Math.max(s, 1 - s) * 100).toFixed(1) + "% · score " + s.toFixed(3);
+      latencyEl.textContent = data.latency_ms + " ms";
+      mark.style.left = (s * 100) + "%";
+      result.style.display = "block";
+    } catch (e) {
+      showError("Network error: " + e.message);
+    }
+  }
+
+  fileInput.addEventListener("change", e => handleFile(e.target.files[0]));
+  cameraInput.addEventListener("change", e => handleFile(e.target.files[0]));
+
+  // Drag and drop
+  ["dragenter", "dragover"].forEach(ev => {
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("hover"); });
+  });
+  ["dragleave", "drop"].forEach(ev => {
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hover"); });
+  });
+  drop.addEventListener("drop", e => {
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+</script>
+</body>
+</html>
